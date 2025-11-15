@@ -416,3 +416,10 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# MacOs file for storing custom attributes
+*.DS_Store
+# Thumbs.db file for storing image thumbnails on Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
