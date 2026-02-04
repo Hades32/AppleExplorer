@@ -32,11 +32,11 @@ jobs:
         run: dotnet workload install maui
 
       - name: Restore dependencies
-        run: dotnet restore Src/AppleExplorer.Desktop/AppleExplorer.slnx
+        run: dotnet restore Src/AppleExplorer.Desktop/AppleExplorer.Desktop/AppleExplorer.Desktop.csproj
 
       - name: Build
         run: |
-          dotnet build Src/AppleExplorer.Desktop/AppleExplorer.slnx \
+          dotnet build Src/AppleExplorer.Desktop/AppleExplorer.Desktop/AppleExplorer.Desktop.csproj \
             -c Release \
             -f net10.0-maccatalyst \
             -r ${{ matrix.runtime }} \
