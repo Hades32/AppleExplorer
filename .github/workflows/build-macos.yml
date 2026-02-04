@@ -1,0 +1,50 @@
+name: Build macOS
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - arch: arm64
+            runtime: maccatalyst-arm64
+          - arch: x64
+            runtime: maccatalyst-x64
+
+    runs-on: macos-15
+    name: Build macOS ${{ matrix.arch }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install MAUI workload
+        run: dotnet workload install maui
+
+      - name: Restore dependencies
+        run: dotnet restore Src/AppleExplorer.Desktop/AppleExplorer.slnx
+
+      - name: Build
+        run: |
+          dotnet build Src/AppleExplorer.Desktop/AppleExplorer.slnx \
+            -c Release \
+            -f net10.0-maccatalyst \
+            -r ${{ matrix.runtime }} \
+            --no-restore
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppleExplorer-macOS-${{ matrix.arch }}
+          path: Bin/Release/Desktop/**/*.app
+          if-no-files-found: warn
