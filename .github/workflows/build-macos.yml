@@ -7,9 +7,14 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
+concurrency:
+  group: macos-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - arch: arm64
@@ -27,24 +32,47 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+          cache: true
+          cache-dependency-path: |
+            **/*.csproj
+            **/*.props
 
       - name: Install MAUI workload
-        run: dotnet workload install maui
+        run: dotnet workload install maui --skip-manifest-update
 
       - name: Restore dependencies
-        run: dotnet restore Src/AppleExplorer.Desktop/AppleExplorer.Desktop/AppleExplorer.Desktop.csproj
-
-      - name: Build
         run: |
-          dotnet build Src/AppleExplorer.Desktop/AppleExplorer.Desktop/AppleExplorer.Desktop.csproj \
+          dotnet restore Src/AppleExplorer.Desktop/AppleExplorer.Desktop/AppleExplorer.Desktop.csproj \
+            -r ${{ matrix.runtime }}
+
+      - name: Publish
+        run: |
+          dotnet publish Src/AppleExplorer.Desktop/AppleExplorer.Desktop/AppleExplorer.Desktop.csproj \
             -c Release \
             -f net10.0-maccatalyst \
             -r ${{ matrix.runtime }} \
+            -p:ContinuousIntegrationBuild=true \
             --no-restore
+
+      - name: Create DMG
+        run: |
+          APP_PATH=$(find Bin/Release/Desktop -name "*.app" -type d | head -n 1)
+          APP_NAME=$(basename "$APP_PATH")
+          echo "Found app: $APP_PATH"
+          
+          DMG_NAME="AppleExplorer-${{ matrix.arch }}.dmg"
+          TEMP_DMG="temp.dmg"
+          
+          # Create a temporary directory for the DMG contents
+          mkdir -p dmg_contents
+          cp -R "$APP_PATH" dmg_contents/
+          
+          # Create DMG
+          hdiutil create -volname "AppleExplorer" -srcfolder dmg_contents -ov -format UDZO "$DMG_NAME"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: AppleExplorer-macOS-${{ matrix.arch }}
-          path: Bin/Release/Desktop/**/*.app
-          if-no-files-found: warn
+          path: AppleExplorer-${{ matrix.arch }}.dmg
+          if-no-files-found: error
