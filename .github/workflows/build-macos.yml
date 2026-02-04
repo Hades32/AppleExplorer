@@ -31,7 +31,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: '9.0.x'
           cache: true
           cache-dependency-path: |
             **/*.csproj
@@ -49,7 +49,7 @@ jobs:
         run: |
           dotnet publish Src/AppleExplorer.Desktop/AppleExplorer.Desktop/AppleExplorer.Desktop.csproj \
             -c Release \
-            -f net10.0-maccatalyst \
+            -f net9.0-maccatalyst \
             -r ${{ matrix.runtime }} \
             -p:ContinuousIntegrationBuild=true \
             --no-restore
